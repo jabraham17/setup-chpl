@@ -19,11 +19,11 @@ jobs:
         version: [latest, 2.5.0, 2.6.0]
         comm: [none, gasnet-udp]
         backend: [llvm, clang]
-      exclude:
-        - version: 2.5.0
-          comm: gasnet-udp
-        - version: 2.5.0
-          backend: clang
+        exclude:
+          - version: 2.5.0
+            comm: gasnet-udp
+          - version: 2.5.0
+            backend: clang
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -40,11 +40,11 @@ jobs:
         version: [latest, 2.5.0, 2.6.0]
         comm: [none, gasnet-udp]
         backend: [llvm, clang]
-      exclude:
-        - version: 2.5.0
-          comm: gasnet-udp
-        - version: 2.5.0
-          backend: clang
+        exclude:
+          - version: 2.5.0
+            comm: gasnet-udp
+          - version: 2.5.0
+            backend: clang
     runs-on: ${{ matrix.os }}
     container:
       image: ${{ matrix.container }}

@@ -1,0 +1,47 @@
+name: "Setup CHPL"
+description: "Setup Chapel environment"
+inputs:
+  version:
+    description: "Chapel version to install (latest, nightly, or specific version)"
+    required: false
+    default: "latest"
+  comm:
+    description: "Communication layer to use (none, gasnet-udp, gasnet-smp)"
+    required: false
+    default: "none"
+  backend:
+    description: "Backend to use (llvm, gnu, or clang)"
+    required: false
+    default: "llvm"
+outputs:
+  chpl:
+    description: "Chapel compiler"
+    value: ${{ steps.outputs.outputs.chpl }}
+  chpldoc:
+    description: "Chapel documentation generator"
+    value: ${{ steps.outputs.outputs.chpldoc }}
+  chplcheck:
+    description: "Chapel static code analyzer"
+    value: ${{ steps.outputs.outputs.chplcheck }}
+  mason:
+    description: "Mason package manager"
+    value: ${{ steps.outputs.outputs.mason }}
+  chpl_home:
+    description: "Path to the installed Chapel home directory"
+    value: ${{ steps.outputs.outputs.chpl_home }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Run Install Script"
+      id: outputs
+      shell: bash
+      run: |
+        source $GITHUB_ACTION_PATH/install_chpl.sh
+        install_chpl \
+          "${{ inputs.version }}" \
+          "${{ inputs.comm }}" \
+          "${{ inputs.backend }}"
+
+
+       

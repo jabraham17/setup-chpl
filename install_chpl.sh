@@ -14,7 +14,7 @@ validate_args() {
       echo "Error: nightly builds not yet implemented"
       exit 1
       ;;
-    2.5.0)
+    2.5.0|2.4.0|2.3.0|2.2.0|2.1.0)
       export CHPL_USE_OLD_PACKAGES=1
       ;;
     2.6.0)

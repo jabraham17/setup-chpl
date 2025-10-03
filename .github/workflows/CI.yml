@@ -12,18 +12,13 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  test:
+  test-full:
     strategy:
       matrix:
         os: [ubuntu-24.04, ubuntu-24.04-arm]
-        version: [latest, 2.5.0, 2.6.0]
+        version: [latest, 2.6.0]
         comm: [none, gasnet-udp]
         backend: [llvm, clang]
-        exclude:
-          - version: 2.5.0
-            comm: gasnet-udp
-          - version: 2.5.0
-            backend: clang
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -43,14 +38,9 @@ jobs:
       matrix:
         os: [ubuntu-24.04, ubuntu-24.04-arm]
         container: [fedora:42, debian:13, rockylinux/rockylinux:10]
-        version: [latest, 2.5.0, 2.6.0]
+        version: [latest, 2.6.0]
         comm: [none, gasnet-udp]
         backend: [llvm, clang]
-        exclude:
-          - version: 2.5.0
-            comm: gasnet-udp
-          - version: 2.5.0
-            backend: clang
     runs-on: ${{ matrix.os }}
     container:
       image: ${{ matrix.container }}

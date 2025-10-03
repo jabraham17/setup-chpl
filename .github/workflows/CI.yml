@@ -32,6 +32,11 @@ jobs:
           version: ${{ matrix.version }}
           comm: ${{ matrix.comm }}
           backend: ${{ matrix.backend }}
+      - name: Verify Installation
+        run: |
+          echo "Chapel version:"
+          chpl --version
+          chpl --print-chpl-settings
   test-portability:
     strategy:
       matrix:
@@ -55,4 +60,9 @@ jobs:
           version: ${{ matrix.version }}
           comm: ${{ matrix.comm }}
           backend: ${{ matrix.backend }}
+      - name: Verify Installation
+        run: |
+          echo "Chapel version:"
+          chpl --version
+          chpl --print-chpl-settings
 

@@ -27,7 +27,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.
+      - name: Install Chapel
+        uses: ./.
         with:
           version: ${{ matrix.version }}
           comm: ${{ matrix.comm }}
@@ -55,7 +56,8 @@ jobs:
       image: ${{ matrix.container }}
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.
+      - name: Install Chapel
+        uses: ./.
         with:
           version: ${{ matrix.version }}
           comm: ${{ matrix.comm }}

@@ -13,7 +13,7 @@ A GitHub Action to install the Chapel programming language for all your CI needs
 
 ### Example for Chapel version portabilty tests
 
-This simple example creates a matrix job to test multiple Chapel versions, communication layers, and backends on both x86_64 and ARM architectures. You can customize the OS, versions, communication layers, and backends as needed.
+This simple example creates a matrix job to test multiple Chapel versions, communication layers, and backends on both x86_64 and ARM architectures. You can customize this to fit your project's needs.
 
 ```yaml
 job:

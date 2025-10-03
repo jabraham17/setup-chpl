@@ -1,4 +1,12 @@
 
+mysudo() {
+  if [ "$(id -u)" -ne 0 ]; then
+    sudo "$@"
+  else
+    "$@"
+  fi
+}
+
 validate_args() {
   local chpl_version=$1
   local chpl_comm=$2
@@ -119,11 +127,11 @@ package_install() {
   local pkg_file=$2
   case "$os_suffix" in
     fedora*|el*)
-      sudo dnf install -y $pkg_file || exit 1
+      mysudo dnf install -y $pkg_file || exit 1
       ;;
     debian*|ubuntu*)
-      sudo apt-get update || exit 1
-      sudo apt-get install -y $pkg_file || exit 1
+      mysudo apt-get update || exit 1
+      mysudo apt-get install -y $pkg_file || exit 1
       ;;
     *) echo "Error: unknown OS suffix: $os_suffix"; exit 1 ;;
   esac

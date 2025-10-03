@@ -81,9 +81,7 @@ determine_os() {
       "debian-"*) echo "debian${VERSION_ID}" ;;
       "ubuntu-24."*) echo "ubuntu24" ;;
       "ubuntu-22."*) echo "ubuntu22" ;;
-      "rocky-"*) echo "el${VERSION_ID}" ;;
-      "almalinux-"*) echo "el${VERSION_ID}" ;;
-      "rhel-"*) echo "el${VERSION_ID}" ;;
+      "rocky-10"*|"almalinux-10"*|"rhel-10"*) echo "el10" ;;
       *) echo "Error: unknown OS: $ID-$VERSION_ID"; exit 1 ;;
     esac
   else

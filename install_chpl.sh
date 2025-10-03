@@ -149,12 +149,13 @@ install_chpl() {
 
   local pkg_suffix=$(determine_pkg_suffix $OS_SUFFIX)
   local arch_suffix=$(determine_arch_suffix $OS_SUFFIX)
-  curl -L -o chapel.$pkg_suffix https://github.com/chapel-lang/chapel/releases/download/$CHPL_REAL_VERSION/chapel-$CHPL_REAL_VERSION-1.$OS_SUFFIX.$arch_suffix.$pkg_suffix
+  local package_name=chapel-$CHPL_REAL_VERSION-1.$OS_SUFFIX.$arch_suffix.$pkg_suffix
+  curl -L https://github.com/chapel-lang/chapel/releases/download/$CHPL_REAL_VERSION/$package_name -o $package_name
   if [ $? -ne 0 ]; then
     echo "Error: failed to download Chapel package"
     exit 1
   fi
-  package_install $OS_SUFFIX ./chapel.$pkg_suffix
+  package_install $OS_SUFFIX ./$package_name
 
 
   set_github_env $chpl_version $chpl_comm $chpl_backend

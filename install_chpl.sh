@@ -154,6 +154,8 @@ install_chpl() {
     exit 1
   fi
 
+  package_install $OS_SUFFIX curl
+
 
   local pkg_suffix=$(determine_pkg_suffix $OS_SUFFIX)
   local arch_suffix=$(determine_arch_suffix $OS_SUFFIX)

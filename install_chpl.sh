@@ -77,7 +77,7 @@ determine_os() {
   elif [ -f /etc/os-release ]; then
     . /etc/os-release
     case "$ID-$VERSION_ID" in
-      "fedora-"*) echo "fedora${VERSION_ID}" ;;
+      "fedora-"*) echo "fc${VERSION_ID}" ;;
       "debian-"*) echo "debian${VERSION_ID}" ;;
       "ubuntu-24."*) echo "ubuntu24" ;;
       "ubuntu-22."*) echo "ubuntu22" ;;
@@ -93,7 +93,7 @@ determine_os() {
 determine_pkg_suffix() {
   local os_suffix=$1
   case "$os_suffix" in
-    fedora*|el*) echo "rpm" ;;
+    fc*|el*) echo "rpm" ;;
     debian*|ubuntu*) echo "deb" ;;
     *) echo "Error: unknown OS suffix: $os_suffix"; exit 1 ;;
   esac
@@ -109,7 +109,7 @@ determine_arch_suffix() {
   local os_suffix=$1
   
   case "$os_suffix" in
-    fedora*|el*) echo $(normalized_arch) ;;
+    fc*|el*) echo $(normalized_arch) ;;
     debian*|ubuntu*)
       case "$(normalized_arch)" in
         x86_64) echo "amd64" ;;
@@ -124,7 +124,7 @@ package_install() {
   local os_suffix=$1
   local pkg_file=$2
   case "$os_suffix" in
-    fedora*|el*)
+    fc*|el*)
       mysudo dnf install -y $pkg_file || exit 1
       ;;
     debian*|ubuntu*)

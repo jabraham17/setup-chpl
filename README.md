@@ -45,7 +45,7 @@ job:
 
 | Input   | Description        | Default  |
 |---------|--------------------|----------|
-| `version` | The Chapel version to install. Use `latest` for the most recent stable release. Supports all Chapel versions since `2.0.0`, but not all configurations are supported. | `latest`   |
+| `version` | The Chapel version to install. Use `latest` for the most recent stable release. Supports all Chapel versions since `2.1.0`, but not all configurations are supported. | `latest`   |
 | `comm`    | The communication layer to use. Options are `none` and `gasnet-udp`. | `none`     |
 | `backend` | The backend compiler to use. Options are `llvm` and `clang`. | `llvm`     |
 

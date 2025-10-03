@@ -87,10 +87,30 @@ determine_os() {
 determine_pkg_suffix() {
   local os_suffix=$1
   case "$os_suffix" in
-    fedora*) echo "rpm" ;;
-    el*) echo "rpm" ;;
-    debian*) echo "deb" ;;
-    ubuntu*) echo "deb" ;;
+    fedora*|el*) echo "rpm" ;;
+    debian*|ubuntu*) echo "deb" ;;
+    *) echo "Error: unknown OS suffix: $os_suffix"; exit 1 ;;
+  esac
+}
+normalized_arch() {
+  case "$(uname -m)" in
+    x86_64|amd64) echo "x86_64" ;;
+    aarch64|arm64) echo "aarch64" ;;
+    *) echo "Error: unsupported architecture: $(uname -m)"; exit 1 ;;
+  esac
+}
+determine_arch_suffix() {
+  local os_suffix=$1
+  
+  case "$os_suffix" in
+    fedora*|el*) echo $(normalized_arch) ;;
+    debian*|ubuntu*)
+      case "$(normalized_arch)" in
+        x86_64) echo "amd64" ;;
+        aarch64) echo "arm64" ;;
+        *) echo "Error: unsupported architecture: $(uname -m)"; exit 1 ;;
+      esac
+      ;;
     *) echo "Error: unknown OS suffix: $os_suffix"; exit 1 ;;
   esac
 }
@@ -128,7 +148,8 @@ install_chpl() {
 
 
   local pkg_suffix=$(determine_pkg_suffix $OS_SUFFIX)
-  wget https://github.com/chapel-lang/chapel/releases/download/$CHPL_REAL_VERSION/chapel-$CHPL_REAL_VERSION-1.$OS_SUFFIX.$(uname -m).$pkg_suffix -O chapel.$pkg_suffix
+  local arch_suffix=$(determine_arch_suffix $OS_SUFFIX)
+  curl -L -o chapel.$pkg_suffix https://github.com/chapel-lang/chapel/releases/download/$CHPL_REAL_VERSION/chapel-$CHPL_REAL_VERSION-1.$OS_SUFFIX.$arch_suffix.$pkg_suffix
   if [ $? -ne 0 ]; then
     echo "Error: failed to download Chapel package"
     exit 1

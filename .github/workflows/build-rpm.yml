@@ -1,0 +1,149 @@
+name: build-rpm
+
+on:
+  pull_request:
+
+concurrency:
+  group: build-rpm-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  build-tarball:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: chapel-lang/chapel
+          ref: main
+      - name: Compute Version
+        id: version
+        run: |
+          __chplversionpart() {
+            local part=$(grep 'set('$1 < "$CHPL_HOME/CMakeLists.txt" | cut -f2 -d\  | sed "s/)//g")
+            echo $part
+          }
+          __chplversion() {
+            local major=$(__chplversionpart CHPL_MAJOR_VERSION)
+            local minor=$(__chplversionpart CHPL_MINOR_VERSION)
+            local patch=$(__chplversionpart CHPL_PATCH_VERSION)
+            echo "$major.$minor.$patch"
+          }
+          echo "CHPL_VERSION=$(__chplversion)" >> $GITHUB_ENV
+      - name: Build tarball
+        run: |
+          CHPL_GEN_RELEASE_SKIP_DOCS=1 CHPL_GEN_RELEASE_NO_CLONE=1 ./util/buildRelease/gen_release ${{ env.CHPL_VERSION }}
+      - name: Upload tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: chapel-tarball
+          path: ${{ github.workspace }}/tar/chapel-${{ env.CHPL_VERSION }}.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+  build-rpm:
+    needs: build-tarball
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - platform: linux/amd64
+          runner: ubuntu-latest
+        - platform: linux/arm64
+          runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+      - uses: actions/checkout@v4
+        with:
+          repository: chapel-lang/chapel
+          ref: main
+      - name: Download tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: chapel-tarball
+          path: ${{ github.workspace }}/util/packaging/tarballs
+      - name: Compute package info
+        id: package-info
+        run: |
+          source util/packaging/common/build_helpers.sh
+          __chplversionpart() {
+            local part=$(grep 'set('$1 < "$CHPL_HOME/CMakeLists.txt" | cut -f2 -d\  | sed "s/)//g")
+            echo $part
+          }
+          __chplversion() {
+            local major=$(__chplversionpart CHPL_MAJOR_VERSION)
+            local minor=$(__chplversionpart CHPL_MINOR_VERSION)
+            local patch=$(__chplversionpart CHPL_PATCH_VERSION)
+            echo "$major.$minor.$patch"
+          }
+
+          OS=ubuntu24
+          echo "OS=$OS" >> $GITHUB_ENV
+
+          PACKAGE_NAME=$(__get_package_name $OS chapel)
+          echo "PACKAGE_NAME=$PACKAGE_NAME" >> $GITHUB_ENV
+
+          CHPL_VERSION=$(__chplversion)
+          echo "CHPL_VERSION=$CHPL_VERSION" >> $GITHUB_ENV
+
+          PACKAGE_VERSION=1
+          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
+
+          PKG_TYPE=$(__package_type_from_os $OS)
+          echo "PKG_TYPE=$PKG_TYPE" >> $GITHUB_ENV
+
+          DOCKER_IMAGE_BASE=$(__docker_image_from_os $os)
+          echo "DOCKER_IMAGE_BASE=$DOCKER_IMAGE_BASE" >> $GITHUB_ENV
+
+          DOCKER_TAG=$(__get_docker_tag $OS $PACKAGE_NAME $CHPL_VERSION $PACKAGE_VERSION)
+          echo "DOCKER_TAG=$DOCKER_TAG" >> $GITHUB_ENV
+
+          PACKAGE_DIR=util/packaging/$PKG_TYPE/$OS
+          echo "=$PACKAGE_DIR" >> $GITHUB_ENV
+
+          PLATFORM=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${PLATFORM//\//-}" >> $GITHUB_ENV
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Pull Docker image
+        run: |
+          docker pull ${{ env.DOCKER_IMAGE_BASE }}
+
+          DOCKER_IMAGE_NAME_FULL=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.DOCKER_IMAGE_BASE }})
+          echo "DOCKER_IMAGE_NAME_FULL=$DOCKER_IMAGE_NAME_FULL" >> $GITHUB_ENV
+      - name: Fill Template
+        run: |
+          PKG_TYPE=${{ env.PKG_TYPE }}
+          OS=${{ env.OS }}
+          CWD=$(pwd)
+          PACKAGE_DIR=${{ env.PACKAGE_DIR }}
+          TEMPLATE_SCRIPT=$CWD/util/packaging/$PKG_TYPE/common/fill_docker_template.py
+          pushd $PACKAGE_DIR
+          $TEMPLATE_SCRIPT Dockerfile.template $OS
+          popd
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          platforms: ${{ matrix.platform }}
+          tags: ${{ env.DOCKER_TAG }}
+          context: ${{ env.PACKAGE_DIR }}/../..
+          file: ${{ env.PACKAGE_DIR }}/Dockerfile
+          outputs: type=local,dest=${{ runner.temp }}/build
+          load: false
+          build-args: |
+            BASENAME=${{ env.PACKAGE_NAME }}
+            CHAPEL_VERSION=${{ env.CHPL_VERSION }}
+            PACKAGE_VERSION=${{ env.PACKAGE_VERSION }}
+            OS_NAME=${{ env.OS }}
+            DOCKER_DIR_NAME=${{ env.OS }}
+            DOCKER_IMAGE_NAME_FULL=${{ env.DOCKER_IMAGE_NAME_FULL }}
+            PARALLEL=2
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PACKAGE_NAME }}-${{ env.OS }}-rpm
+          path: ${{ runner.temp }}/build/*.rpm

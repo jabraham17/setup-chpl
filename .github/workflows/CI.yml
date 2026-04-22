@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-24.04, ubuntu-24.04-arm]
-        version: [latest, 2.6.0]
+        version: [latest, 2.8.0, 2.6.0]
         comm: [none, gasnet-udp]
         backend: [llvm, clang]
     runs-on: ${{ matrix.os }}
@@ -33,12 +33,13 @@ jobs:
           echo "Chapel version:"
           chpl --version
           chpl --print-chpl-settings
+          mason --version
   test-portability:
     strategy:
       matrix:
         os: [ubuntu-24.04, ubuntu-24.04-arm]
         container: [fedora:42, debian:13, rockylinux/rockylinux:10]
-        version: [latest, 2.6.0]
+        version: [latest, 2.8.0, 2.6.0]
         comm: [none, gasnet-udp]
         backend: [llvm, clang]
     runs-on: ${{ matrix.os }}
@@ -57,16 +58,15 @@ jobs:
           echo "Chapel version:"
           chpl --version
           chpl --print-chpl-settings
+          mason --version
   test-versions:
     strategy:
       matrix:
         os: [ubuntu-24.04, ubuntu-24.04-arm]
-        version: [2.1.0, 2.2.0, 2.3.0, 2.4.0, 2.5.0, 2.6.0]
+        version: [2.1.0, 2.2.0, 2.3.0, 2.4.0, 2.5.0, 2.6.0, 2.7.0, 2.8.0]
         comm: [none]
         backend: [llvm]
     runs-on: ${{ matrix.os }}
-    container:
-      image: ${{ matrix.container }}
     steps:
       - uses: actions/checkout@v4
       - name: Install Chapel
@@ -80,3 +80,4 @@ jobs:
           echo "Chapel version:"
           chpl --version
           chpl --print-chpl-settings
+          mason --version

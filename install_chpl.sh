@@ -7,31 +7,71 @@ mysudo() {
   fi
 }
 
+get_chapel_versions() {
+  git ls-remote --tags https://github.com/chapel-lang/chapel.git 2>/dev/null \
+    | grep -oE 'refs/tags/[0-9]+\.[0-9]+\.[0-9]+$' \
+    | sed 's|refs/tags/||' \
+    | sort -t. -k1,1n -k2,2n -k3,3n \
+    | uniq
+}
+
+# Returns 0 (true) if $1 >= $2, 1 (false) otherwise
+version_ge() {
+  local v1_major v1_minor v1_patch v2_major v2_minor v2_patch
+  IFS='.' read -r v1_major v1_minor v1_patch <<< "$1"
+  IFS='.' read -r v2_major v2_minor v2_patch <<< "$2"
+  if [ "$v1_major" -gt "$v2_major" ]; then return 0; fi
+  if [ "$v1_major" -lt "$v2_major" ]; then return 1; fi
+  if [ "$v1_minor" -gt "$v2_minor" ]; then return 0; fi
+  if [ "$v1_minor" -lt "$v2_minor" ]; then return 1; fi
+  if [ "$v1_patch" -ge "$v2_patch" ]; then return 0; fi
+  return 1
+}
+
 validate_args() {
   local chpl_version=$1
   local chpl_comm=$2
   local chpl_backend=$3
 
   export CHPL_USE_OLD_PACKAGES=0
-  export CHPL_REAL_VERSION=$chpl_version
+
+  # Fetch all available versions from chapel-lang
+  local all_versions
+  all_versions=$(get_chapel_versions)
+  if [ -z "$all_versions" ]; then
+    echo "Error: failed to fetch Chapel versions from chapel-lang"
+    exit 1
+  fi
+
   case "$chpl_version" in
     latest)
-      export CHPL_REAL_VERSION=2.6.0
+      export CHPL_REAL_VERSION=$(echo "$all_versions" | tail -1)
       ;;
     nightly)
       echo "Error: nightly builds not yet implemented"
       exit 1
       ;;
-    2.5.0|2.4.0|2.3.0|2.2.0|2.1.0)
-      export CHPL_USE_OLD_PACKAGES=1
-      ;;
-    2.6.0)
-      ;;
     *)
-      echo "Error: unsupported Chapel version: $chpl_version"
-      exit 1
+      export CHPL_REAL_VERSION=$chpl_version
       ;;
   esac
+
+  # Validate version exists on chapel-lang
+  if ! echo "$all_versions" | grep -qx "$CHPL_REAL_VERSION"; then
+    echo "Error: Chapel version $CHPL_REAL_VERSION does not exist on chapel-lang"
+    exit 1
+  fi
+
+  # Check minimum version
+  if ! version_ge "$CHPL_REAL_VERSION" "2.1.0"; then
+    echo "Error: Chapel version $CHPL_REAL_VERSION is less than minimum supported version 2.1.0"
+    exit 1
+  fi
+
+  # Versions < 2.6.0 use old package format
+  if ! version_ge "$CHPL_REAL_VERSION" "2.6.0"; then
+    export CHPL_USE_OLD_PACKAGES=1
+  fi
 
   case "$chpl_comm" in
     none|gasnet-udp)
@@ -107,7 +147,7 @@ normalized_arch() {
 }
 determine_arch_suffix() {
   local os_suffix=$1
-  
+
   case "$os_suffix" in
     fc*|el*) echo $(normalized_arch) ;;
     debian*|ubuntu*)
